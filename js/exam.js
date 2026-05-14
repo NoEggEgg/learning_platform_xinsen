@@ -43,6 +43,9 @@ const ExamModule = {
         UI.elements.exam.startBtn.textContent = '考试中';
         UI.elements.exam.prevBtn.disabled = false;
         UI.elements.exam.nextBtn.disabled = false;
+        UI.elements.exam.endBtn.style.display = 'block';
+        
+        this.updateAnsweredCount();
         
         showToast(`模拟考试开始，共 ${CONFIG.EXAM_QUESTION_COUNT} 道题，总分 ${CONFIG.EXAM_TOTAL_SCORE} 分，时间 ${Math.floor(CONFIG.EXAM_DURATION / 60)} 分钟，${CONFIG.EXAM_PASS_SCORE} 分合格`, TOAST_TYPES.INFO);
     },
@@ -64,7 +67,20 @@ const ExamModule = {
         const progressPercent = ((currentIndex + 1) / examQuestions.length) * 100;
         UI.elements.exam.progressFill.style.width = progressPercent + '%';
         
+        UI.elements.exam.prevBtn.disabled = currentIndex === 0;
+        
         this.renderOptions(question, answers[currentIndex]);
+        this.updateAnsweredCount();
+    },
+    
+    updateAnsweredCount() {
+        const answeredEl = document.getElementById('exam-answered-count');
+        if (answeredEl) {
+            const total = AppState.exam.questions.length;
+            const answered = Object.keys(AppState.exam.answers).length;
+            const remaining = total - answered;
+            answeredEl.innerHTML = `<i class="fa-solid fa-check-circle" style="color: var(--success-color);"></i> 已答 <strong>${answered}</strong> 题，剩余 <strong>${remaining}</strong> 题`;
+        }
     },
     
     renderOptions(question, savedAnswer) {
@@ -91,6 +107,8 @@ const ExamModule = {
                 option.classList.add('selected');
             }
         });
+        
+        this.updateAnsweredCount();
     },
     
     prevQuestion() {
@@ -104,8 +122,8 @@ const ExamModule = {
         const isLastQuestion = AppState.exam.currentIndex >= AppState.exam.questions.length - 1;
         
         if (isLastQuestion) {
-            // 最后一题，自动跳转到结束考试
-            showToast('已是最后一题，请点击"结束考试"提交答卷', TOAST_TYPES.INFO);
+            // 最后一题，提示提交答卷
+            showToast('已是最后一题，请点击"提交答卷"完成考试', TOAST_TYPES.INFO);
             return;
         }
         
@@ -114,12 +132,12 @@ const ExamModule = {
     },
     
     submitExam() {
-        // 提交考试前的确认
         const unanswered = AppState.exam.questions.length - Object.keys(AppState.exam.answers).length;
         if (unanswered > 0) {
-            if (!confirm(`还有 ${unanswered} 道题未作答，确定要提交吗？`)) {
-                return;
-            }
+            Utils.showConfirmDialog('提交考试', `还有 <strong>${unanswered}</strong> 道题未作答，确定要提交吗？`,
+                () => this.end()
+            );
+            return;
         }
         this.end();
     },
@@ -212,6 +230,7 @@ const ExamModule = {
         UI.elements.exam.startBtn.textContent = '开始考试';
         UI.elements.exam.prevBtn.disabled = true;
         UI.elements.exam.nextBtn.disabled = true;
+        UI.elements.exam.endBtn.style.display = 'none';
         UI.elements.exam.time.textContent = Utils.formatTime(CONFIG.EXAM_DURATION);
         UI.elements.exam.time.style.color = '#ef4444';
         UI.elements.exam.progressFill.style.width = '0%';

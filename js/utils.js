@@ -201,6 +201,30 @@ const Utils = {
         return div.innerHTML;
     },
     
+    // 安全的HTML渲染，允许特定标签防止XSS
+    safeHtml(text) {
+        if (text === null || text === undefined) return '';
+        // 首先转义所有HTML
+        let safe = this.escapeHtml(text);
+        // 然后允许特定的安全标签（键使用转义后的形式）
+        const allowedTags = {
+            '&lt;strong&gt;': '<strong>',
+            '&lt;/strong&gt;': '</strong>',
+            '&lt;b&gt;': '<b>',
+            '&lt;/b&gt;': '</b>',
+            '&lt;em&gt;': '<em>',
+            '&lt;/em&gt;': '</em>',
+            '&lt;br&gt;': '<br>',
+            '&lt;br/&gt;': '<br/>',
+            '&lt;br /&gt;': '<br />'
+        };
+        // 恢复允许的标签
+        for (const [escaped, original] of Object.entries(allowedTags)) {
+            safe = safe.split(escaped).join(original);
+        }
+        return safe;
+    },
+    
     // 渲染题目选项（公共函数，减少代码重复）
     renderOptions(container, question, onSelect, selectedIndex = null, isAnswered = false) {
         container.innerHTML = '';
@@ -307,7 +331,6 @@ const Utils = {
         const dialog = document.createElement('div');
         dialog.className = 'modal show';
         const safeTitle = this.escapeHtml(title);
-        const safeMessage = this.escapeHtml(message);
         
         const modalContent = document.createElement('div');
         modalContent.className = 'modal-content';
@@ -322,7 +345,7 @@ const Utils = {
         const messageElement = document.createElement('p');
         messageElement.style.color = 'var(--text-secondary)';
         messageElement.style.marginBottom = '24px';
-        messageElement.textContent = safeMessage;
+        messageElement.innerHTML = this.safeHtml(message);
         
         const buttonContainer = document.createElement('div');
         buttonContainer.style.display = 'flex';

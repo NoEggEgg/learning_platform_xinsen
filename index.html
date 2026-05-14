@@ -79,6 +79,31 @@
             from { width: 0%; }
         }
 
+        @keyframes toastSlideIn {
+            from { transform: translateX(120%) scale(0.8); opacity: 0; }
+            to { transform: translateX(0) scale(1); opacity: 1; }
+        }
+
+        @keyframes toastSlideOut {
+            from { transform: translateX(0) scale(1); opacity: 1; }
+            to { transform: translateX(120%) scale(0.8); opacity: 0; }
+        }
+
+        @keyframes skeletonShimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        @keyframes pageEnter {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -1119,47 +1144,6 @@
             text-overflow: ellipsis;
         }
 
-        .exam-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding: 20px 25px;
-            background: var(--card-bg);
-            border-radius: 14px;
-            box-shadow: var(--shadow);
-        }
-
-        .exam-timer {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: var(--danger-color);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .exam-progress {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .exam-progress-bar {
-            width: 220px;
-            height: 12px;
-            background: #f1f5f9;
-            border-radius: 6px;
-            overflow: hidden;
-        }
-
-        .exam-progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--success-color) 0%, #059669 100%);
-            border-radius: 6px;
-            transition: width 0.4s ease;
-        }
-
         .modal {
             display: none;
             position: fixed;
@@ -1250,6 +1234,181 @@
             color: var(--text-secondary);
         }
 
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: skeletonShimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+
+        .skeleton-text { height: 16px; margin-bottom: 8px; }
+        .skeleton-title { height: 24px; width: 60%; margin-bottom: 16px; }
+        .skeleton-card { height: 120px; margin-bottom: 16px; }
+
+        *:focus-visible {
+            outline: 3px solid var(--primary-color);
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+
+        button:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .section-content {
+            animation: pageEnter 0.4s ease;
+        }
+
+        .scroll-top-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+            cursor: pointer;
+            z-index: 99;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .scroll-top-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .scroll-top-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 99;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+            opacity: 1;
+        }
+
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 101;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid var(--border-color);
+            z-index: 100;
+            padding: 8px 16px;
+            padding-bottom: max(8px, env(safe-area-inset-bottom));
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .mobile-bottom-nav .nav-items {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .mobile-bottom-nav .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            border: none;
+            background: none;
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            min-width: 56px;
+        }
+
+        .mobile-bottom-nav .nav-item.active {
+            color: var(--primary-color);
+        }
+
+        .mobile-bottom-nav .nav-item i {
+            font-size: 1.2rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+        }
+
+        .empty-state i {
+            font-size: 3.5rem;
+            display: block;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .card {
+            transition: box-shadow 0.3s ease, transform 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+        }
+
         @media (max-width: 1024px) {
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -1258,30 +1417,30 @@
 
         @media (max-width: 768px) {
             .sidebar {
-                width: 70px;
-                padding: 15px 5px;
+                transform: translateX(-100%);
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                z-index: 100;
+                width: 260px;
+                transition: transform 0.3s ease;
             }
 
-            .sidebar h1 {
-                display: none;
+            .sidebar.open {
+                transform: translateX(0);
             }
 
-            .sidebar a span {
-                display: none;
+            .sidebar-toggle {
+                display: flex;
             }
 
-            .sidebar a {
-                padding: 12px 8px;
-                justify-content: center;
-            }
-
-            .sidebar i {
-                margin-right: 0;
-                font-size: 1.3rem;
+            .sidebar-overlay.show {
+                display: block;
             }
 
             .main-content {
-                margin-left: 70px;
+                margin-left: 0;
                 padding: 15px;
             }
 
@@ -1318,12 +1477,6 @@
                 font-size: 1rem;
                 padding: 15px;
                 line-height: 1.8;
-            }
-
-            .exam-header {
-                flex-direction: column;
-                gap: 12px;
-                text-align: center;
             }
 
             .modal-content {
@@ -1439,10 +1592,19 @@
                 padding: 14px 16px;
             }
 
-            .option-letter {
-                width: 28px;
-                height: 28px;
-                font-size: 0.85rem;
+            .mobile-bottom-nav {
+                display: block;
+            }
+
+            .scroll-top-btn {
+                bottom: 80px;
+            }
+
+            .toast-notification {
+                left: 12px;
+                right: 12px;
+                max-width: none;
+                bottom: 80px !important;
             }
 
             .modal-content {
@@ -1764,6 +1926,9 @@
                             <button class="btn btn-primary" onclick="StudyModule.reviewWrong()">
                                 <i class="fa-solid fa-rotate-right"></i> 重做错题
                             </button>
+                            <button class="btn btn-danger" onclick="App.clearWrongQuestions()" style="padding: 8px 16px; font-size: 0.85rem;">
+                                <i class="fa-solid fa-trash-can"></i> 清空错题
+                            </button>
                         </div>
                         <div class="wrong-list" id="wrong-list">
                             <div id="wrong-empty-state" style="text-align: center; padding: 50px; color: var(--text-secondary);">
@@ -1785,6 +1950,9 @@
                             <button class="btn btn-primary" onclick="StudyModule.reviewFavorite()">
                                 <i class="fa-solid fa-rotate-right"></i> 复习收藏
                             </button>
+                            <button class="btn btn-danger" onclick="App.clearFavoriteQuestions()" style="padding: 8px 16px; font-size: 0.85rem;">
+                                <i class="fa-solid fa-trash-can"></i> 清空收藏
+                            </button>
                         </div>
                         <div class="wrong-list" id="favorite-list">
                             <div id="favorite-empty-state" style="text-align: center; padding: 50px; color: var(--text-secondary);">
@@ -1801,44 +1969,64 @@
             </section>
 
             <section id="exam-section" style="display: none;">
-                <div class="exam-header">
-                    <div class="exam-timer">
-                        <i class="fa-solid fa-clock"></i> <span id="exam-time">60:00</span>
-                    </div>
-                    <div class="exam-progress">
-                        <span id="exam-current">0</span>/<span id="exam-total">60</span>
-                        <div class="exam-progress-bar">
-                            <div class="exam-progress-fill" id="exam-progress-fill" style="width: 0%"></div>
-                        </div>
-                    </div>
-                    <button class="btn btn-danger" onclick="ExamModule.submitExam()">结束考试</button>
+    <div class="card" style="margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding: 20px 24px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 16px; border: 1px solid var(--border-color);">
+            <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 1.1rem;">
+                    <i class="fa-solid fa-clock" style="color: var(--primary-color);"></i>
+                    <span id="exam-time">60:00</span>
                 </div>
-
-                <div class="question-card">
-                    <div class="question-header">
-                        <div class="question-meta">
-                            <span class="question-tag tag-single" id="exam-question-type">单选题</span>
-                            <span class="question-tag tag-law" id="exam-question-category">法律类</span>
-                        </div>
-                        <span id="exam-question-number" style="font-weight: 500; color: var(--text-secondary);">第 1/20 题</span>
-                    </div>
-
-                    <div class="question-content" id="exam-question-content">
-                        点击"开始考试"按钮开始模拟考试
-                    </div>
-
-                    <div class="options-list" id="exam-options-list">
-                    </div>
-
-                    <div class="question-actions">
-                        <div style="display: flex; gap: 12px;">
-                            <button class="btn btn-secondary" id="exam-prev-btn" onclick="ExamModule.prevQuestion()" disabled>上一题</button>
-                            <button class="btn btn-primary" id="exam-start-btn" onclick="ExamModule.start()">开始考试</button>
-                            <button class="btn btn-success" id="exam-next-btn" onclick="ExamModule.nextQuestion()" disabled>下一题</button>
-                        </div>
+                <div style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 0.9rem;">
+                    <span>进度</span>
+                    <span id="exam-current">0</span>/<span id="exam-total">60</span>
+                    <div style="width: 100px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-left: 4px;">
+                        <div class="exam-progress-fill" id="exam-progress-fill" style="width: 0%; height: 100%; background: var(--primary-color); border-radius: 3px; transition: width 0.4s ease;"></div>
                     </div>
                 </div>
-            </section>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="display: flex; align-items: center; gap: 4px; font-size: 0.85rem; color: var(--text-secondary);">
+                    <span>总分 <strong id="exam-total-score">100</strong> | 及格 <strong id="exam-pass-score">60</strong></span>
+                </div>
+                <button class="btn btn-danger" id="exam-end-btn" onclick="ExamModule.submitExam()" style="padding: 10px 24px; font-size: 0.9rem; display: none;">
+                    <i class="fa-solid fa-check-circle"></i> 提交答卷
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="question-card">
+        <div class="question-header">
+            <div class="question-meta">
+                <span class="question-tag tag-single" id="exam-question-type">单选题</span>
+                <span class="question-tag tag-law" id="exam-question-category">法律类</span>
+            </div>
+            <span id="exam-question-number" style="font-weight: 500; color: var(--text-secondary);">第 1/20 题</span>
+        </div>
+
+        <div class="question-content" id="exam-question-content">
+            点击"开始考试"按钮开始模拟考试
+        </div>
+
+        <div class="options-list" id="exam-options-list">
+        </div>
+
+        <div class="question-actions" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 20px;">
+            <div style="display: flex; gap: 12px;">
+                <button class="btn btn-secondary" id="exam-prev-btn" onclick="ExamModule.prevQuestion()" disabled>
+                    <i class="fa-solid fa-chevron-left"></i> 上一题
+                </button>
+                <button class="btn btn-primary" id="exam-start-btn" onclick="ExamModule.start()" style="padding: 12px 30px; font-size: 1rem;">
+                    <i class="fa-solid fa-play"></i> 开始考试
+                </button>
+                <button class="btn btn-success" id="exam-next-btn" onclick="ExamModule.nextQuestion()" disabled>
+                    下一题 <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+            <div id="exam-answered-count" style="font-size: 0.85rem; color: var(--text-secondary);"></div>
+        </div>
+    </div>
+</section>
 
             <section id="tips-section" style="display: none;">
                 <div class="card">
@@ -2007,5 +2195,60 @@
     <script src="js/spaced-repetition.js"></script>
     <script src="js/achievement.js"></script>
     <script src="js/app.js"></script>
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" title="菜单">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+    <button class="scroll-top-btn" id="scroll-top-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="回到顶部">
+        <i class="fa-solid fa-chevron-up"></i>
+    </button>
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+        <div class="nav-items">
+            <button class="nav-item active" onclick="UI.showSection('plan')" data-section="plan">
+                <i class="fa-solid fa-house"></i>
+                <span>主页</span>
+            </button>
+            <button class="nav-item" onclick="UI.showSection('study')" data-section="study">
+                <i class="fa-solid fa-book-open"></i>
+                <span>学习</span>
+            </button>
+            <button class="nav-item" onclick="UI.showSection('exercise')" data-section="exercise">
+                <i class="fa-solid fa-file-lines"></i>
+                <span>习题本</span>
+            </button>
+            <button class="nav-item" onclick="UI.showSection('exam')" data-section="exam">
+                <i class="fa-solid fa-file-pen"></i>
+                <span>考试</span>
+            </button>
+            <button class="nav-item" onclick="UI.showSection('tips')" data-section="tips">
+                <i class="fa-solid fa-lightbulb"></i>
+                <span>技巧</span>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+    function toggleSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('show');
+    }
+
+    const scrollTopBtn = document.getElementById('scroll-top-btn');
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 400) {
+            scrollTopBtn.classList.add('visible');
+        } else {
+            scrollTopBtn.classList.remove('visible');
+        }
+    });
+
+    function updateMobileNav(sectionName) {
+        document.querySelectorAll('.mobile-bottom-nav .nav-item').forEach(item => {
+            item.classList.toggle('active', item.dataset.section === sectionName);
+        });
+    }
+    </script>
 </body>
 </html>

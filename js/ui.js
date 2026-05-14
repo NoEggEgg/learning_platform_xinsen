@@ -50,7 +50,8 @@ const UI = {
                 optionsList: document.getElementById('exam-options-list'),
                 startBtn: document.getElementById('exam-start-btn'),
                 prevBtn: document.getElementById('exam-prev-btn'),
-                nextBtn: document.getElementById('exam-next-btn')
+                nextBtn: document.getElementById('exam-next-btn'),
+                endBtn: document.getElementById('exam-end-btn')
             },
             
             modal: {
@@ -91,7 +92,12 @@ const UI = {
             section.style.display = 'none';
         });
         
-        this.elements.sections[sectionName].style.display = 'block';
+        const targetSection = this.elements.sections[sectionName];
+        targetSection.style.display = 'block';
+        targetSection.style.animation = 'none';
+        requestAnimationFrame(() => {
+            targetSection.style.animation = 'pageEnter 0.4s ease';
+        });
         
         this.elements.sidebarLinks.forEach(link => {
             link.classList.remove('active');
@@ -100,6 +106,19 @@ const UI = {
         const activeLink = document.querySelector(`[href="#${sectionName}"]`);
         if (activeLink) {
             activeLink.classList.add('active');
+        }
+        
+        if (typeof updateMobileNav === 'function') {
+            updateMobileNav(sectionName);
+        }
+        
+        if (sectionName !== 'dashboard') {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (sidebar && sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+                if (overlay) overlay.classList.remove('show');
+            }
         }
         
         const titles = {
@@ -186,59 +205,108 @@ const UI = {
 };
 
 function showToast(message, type = 'info') {
-    const existingToast = document.querySelector('.toast-notification');
-    if (existingToast) {
-        existingToast.remove();
-    }
-    
-    const toast = document.createElement('div');
-    toast.className = 'toast-notification';
-    
     const config = {
-        info: { color: 'var(--primary-color)', icon: 'fa-solid fa-info-circle' },
-        success: { color: 'var(--success-color)', icon: 'fa-solid fa-check-circle' },
-        warning: { color: 'var(--warning-color)', icon: 'fa-solid fa-exclamation-triangle' },
-        error: { color: 'var(--danger-color)', icon: 'fa-solid fa-exclamation-circle' }
+        info: { color: 'var(--primary-color)', icon: 'fa-solid fa-info-circle', bg: '#eff6ff', text: '#1e40af' },
+        success: { color: 'var(--success-color)', icon: 'fa-solid fa-check-circle', bg: '#ecfdf5', text: '#166534' },
+        warning: { color: 'var(--warning-color)', icon: 'fa-solid fa-exclamation-triangle', bg: '#fffbeb', text: '#92400e' },
+        error: { color: 'var(--danger-color)', icon: 'fa-solid fa-exclamation-circle', bg: '#fef2f2', text: '#991b1b' }
     };
-    
+
     const { color, icon } = config[type] || config.info;
     
+    const existingToasts = document.querySelectorAll('.toast-notification');
+    const offset = existingToasts.length * 70;
+
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
     toast.style.cssText = `
         position: fixed;
-        bottom: 30px;
-        left: 30px;
+        bottom: ${30 + offset}px;
+        right: 30px;
         padding: 14px 20px;
-        background: ${color};
-        color: white;
+        background: white;
+        color: var(--text-primary);
         border-radius: 12px;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
         z-index: 1001;
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-size: 0.95rem;
-        animation: slideInLeft 0.3s ease;
-        max-width: 90vw;
+        gap: 12px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        animation: toastSlideIn 0.35s cubic-bezier(0.21, 1.02, 0.73, 1);
+        border-left: 4px solid ${color};
+        max-width: 420px;
+        min-width: 280px;
+        transform-origin: bottom right;
+        transition: all 0.3s ease;
     `;
     
-    const iconElement = document.createElement('i');
-    iconElement.className = icon;
+    const iconEl = document.createElement('div');
+    iconEl.style.cssText = `
+        width: 36px; height: 36px; border-radius: 10px;
+        background: ${color}15; display: flex; align-items: center;
+        justify-content: center; flex-shrink: 0;
+    `;
+    iconEl.innerHTML = `<i class="${icon}" style="color: ${color}; font-size: 1rem;"></i>`;
     
-    const messageElement = document.createElement('span');
-    messageElement.innerHTML = message;
+    const msgEl = document.createElement('span');
+    msgEl.innerHTML = message;
+    msgEl.style.flex = '1';
     
-    toast.appendChild(iconElement);
-    toast.appendChild(messageElement);
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '<i class="fa-solid fa-times"></i>';
+    closeBtn.style.cssText = `
+        background: none; border: none; color: var(--text-secondary);
+        cursor: pointer; padding: 4px; font-size: 0.75rem;
+        opacity: 0.5; transition: opacity 0.2s;
+    `;
+    closeBtn.onmouseenter = () => closeBtn.style.opacity = '1';
+    closeBtn.onmouseleave = () => closeBtn.style.opacity = '0.5';
+    closeBtn.onclick = () => dismissToast(toast);
+
+    const progressBar = document.createElement('div');
+    progressBar.style.cssText = `
+        position: absolute; bottom: 0; left: 4px; right: 4px;
+        height: 3px; border-radius: 0 0 3px 3px;
+        background: ${color}30; overflow: hidden;
+    `;
+    const progressFill = document.createElement('div');
+    progressFill.style.cssText = `
+        height: 100%; background: ${color}; border-radius: 2px;
+        width: 100%; transition: width ${CONFIG.TOAST_DURATION}ms linear;
+    `;
+    progressBar.appendChild(progressFill);
+    
+    toast.appendChild(iconEl);
+    toast.appendChild(msgEl);
+    toast.appendChild(closeBtn);
+    toast.appendChild(progressBar);
     document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => {
-            if (document.body.contains(toast)) {
-                toast.remove();
-            }
-        }, 300);
-    }, CONFIG.TOAST_DURATION);
+
+    requestAnimationFrame(() => {
+        progressFill.style.width = '0%';
+    });
+
+    const duration = Math.max(CONFIG.TOAST_DURATION, message.length * 50 + 1000);
+    const timer = setTimeout(() => dismissToast(toast), duration);
+    toast._dismissTimer = timer;
+
+    function dismissToast(t) {
+        clearTimeout(t._dismissTimer);
+        t.style.animation = 'toastSlideOut 0.25s ease forwards';
+        t.addEventListener('animationend', () => {
+            if (document.body.contains(t)) t.remove();
+            repositionToasts();
+        });
+    }
+}
+
+function repositionToasts() {
+    const toasts = document.querySelectorAll('.toast-notification');
+    toasts.forEach((t, i) => {
+        t.style.bottom = `${30 + i * 70}px`;
+    });
 }
 
 if (typeof module !== 'undefined' && module.exports) {

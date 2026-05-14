@@ -676,15 +676,27 @@ const App = {
     },
     
     clearWrongQuestions() {
-        if (!confirm('确定要清空所有错题吗？')) {
-            return;
-        }
-        
-        AppState.progress.wrong = [];
-        Storage.saveProgress();
-        this.updateStats();
-        this.populateWrongList();
-        showToast('错题已清空', TOAST_TYPES.SUCCESS);
+        Utils.showConfirmDialog('清空错题', '确定要清空所有错题吗？此操作不可恢复。', 
+            () => {
+                AppState.progress.wrong = [];
+                Storage.saveProgress();
+                this.updateStats();
+                this.populateWrongList();
+                showToast('错题已清空', TOAST_TYPES.SUCCESS);
+            }
+        );
+    },
+    
+    clearFavoriteQuestions() {
+        Utils.showConfirmDialog('清空收藏', '确定要清空所有收藏吗？此操作不可恢复。',
+            () => {
+                AppState.progress.favorite = [];
+                Storage.saveProgress();
+                this.updateStats();
+                this.populateFavoriteList();
+                showToast('收藏已清空', TOAST_TYPES.SUCCESS);
+            }
+        );
     },
     
     // 添加题目到收藏
