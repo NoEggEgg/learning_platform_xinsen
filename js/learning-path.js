@@ -253,16 +253,13 @@ const LearningPath = {
         
         // 根据阶段跳转到对应的学习内容
         if (phaseId === 1) {
-            // 基础学习 - 法律类
-            App.showSection('study');
+            UI.showSection('study');
             StudyModule.filterByCategory('法律类');
         } else if (phaseId === 2) {
-            // 强化记忆 - 法规类
-            App.showSection('study');
+            UI.showSection('study');
             StudyModule.filterByCategory('法规类');
         } else if (phaseId === 3) {
-            // 冲刺复习 - 国标类，混合学习模式
-            App.showSection('study');
+            UI.showSection('study');
             StudyModule.filterByCategory('国标类');
         }
         

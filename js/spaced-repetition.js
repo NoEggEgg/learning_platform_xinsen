@@ -272,9 +272,8 @@ const SpacedRepetition = {
         }
         
         // 跳转到学习页面进行复习
-        App.showSection('study');
+        UI.showSection('study');
         
-        // 初始化学习状态
         AppState.study.questions = recommended.map(r => r.question).filter(Boolean);
         AppState.study.currentIndex = 0;
         AppState.study.correct = 0;

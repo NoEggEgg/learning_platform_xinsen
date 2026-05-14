@@ -460,7 +460,7 @@ const App = {
             lastSavedAt: Date.now()
         };
         
-        App.showSection('study');
+        this.showSection('study');
         StudyModule.loadQuestion();
         // 开始学习计时
         StudyModule.studyStartTime = Date.now();
@@ -914,7 +914,7 @@ const App = {
             lastSavedAt: Date.now()
         };
         
-        App.showSection('study');
+        this.showSection('study');
         StudyModule.loadQuestion();
         // 开始学习计时
         StudyModule.studyStartTime = Date.now();
