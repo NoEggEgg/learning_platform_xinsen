@@ -13,16 +13,17 @@ const AppState = {
     // 学习会话持久化（保存到localStorage）
     studySession: {
         active: false,
-        type: 'normal',       // 会话类型：'normal'=正常学习, 'wrong'=错题复习
-        questionIds: [],      // 保存题目ID列表
-        questionOrder: [],    // 题目展示顺序索引（随机排列）
+        type: 'normal',
+        questionIds: [],
+        questionOrder: [],
+        visitedIndices: [],
         currentIndex: 0,
-        answeredIds: [],      // 已回答的题目ID
+        answeredIds: [],
         correctCount: 0,
         wrongCount: 0,
         startedAt: null,
         lastSavedAt: null,
-        questionStates: {}    // 保存每道题的答题状态（持久化）
+        questionStates: {}
     },
 
     exam: {

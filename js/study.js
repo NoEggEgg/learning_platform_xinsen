@@ -67,9 +67,6 @@ const StudyModule = {
         // 初始化已回答题目集合
         this._answeredQuestions = new Set();
 
-        // 保留之前的答题状态
-        const existingStates = AppState.study.questionStates || AppState.studySession.questionStates || {};
-
         const questionOrder = Utils.shuffleArray([...Array(shuffledQuestions.length).keys()]);
 
         // 初始化学习会话
@@ -78,13 +75,14 @@ const StudyModule = {
             type: 'normal',
             questionIds: AppState.study.questions.map(q => q.id),
             questionOrder: questionOrder,
+            visitedIndices: [],
             currentIndex: 0,
             answeredIds: [],
             correctCount: 0,
             wrongCount: 0,
             startedAt: Date.now(),
             lastSavedAt: Date.now(),
-            questionStates: existingStates
+            questionStates: {}
         };
 
         UI.showSection('study');
@@ -97,11 +95,10 @@ const StudyModule = {
     
     // 继续学习或开始新学习
     startStudy() {
-        // 检查是否有未完成的学习会话
+        // 检查是否有未完成的学习会话，如果有则恢复
         if (AppState.studySession.active && AppState.studySession.questionIds.length > 0) {
             const remaining = AppState.studySession.questionIds.length - AppState.studySession.currentIndex;
             if (remaining > 0) {
-                // 恢复会话
                 this.resumeStudySession();
                 return;
             }
@@ -118,9 +115,6 @@ const StudyModule = {
         // 初始化已回答题目集合
         this._answeredQuestions = new Set();
 
-        // 保留之前的答题状态
-        const existingStates = AppState.study.questionStates || AppState.studySession.questionStates || {};
-
         const questionOrder = Utils.shuffleArray([...Array(shuffledQuestions.length).keys()]);
 
         // 初始化学习会话
@@ -129,13 +123,14 @@ const StudyModule = {
             type: 'normal',
             questionIds: shuffledQuestions.map(q => q.id),
             questionOrder: questionOrder,
+            visitedIndices: [],
             currentIndex: 0,
             answeredIds: [],
             correctCount: 0,
             wrongCount: 0,
             startedAt: Date.now(),
             lastSavedAt: Date.now(),
-            questionStates: existingStates
+            questionStates: {}
         };
 
         UI.showSection('study');
@@ -178,9 +173,6 @@ const StudyModule = {
         // 初始化已回答题目集合
         this._answeredQuestions = new Set();
 
-        // 保留之前的答题状态
-        const existingStates = AppState.study.questionStates || AppState.studySession.questionStates || {};
-
         const questionOrder = Utils.shuffleArray([...Array(shuffledQuestions.length).keys()]);
 
         // 初始化学习会话
@@ -189,13 +181,14 @@ const StudyModule = {
             type: 'normal',
             questionIds: shuffledQuestions.map(q => q.id),
             questionOrder: questionOrder,
+            visitedIndices: [],
             currentIndex: 0,
             answeredIds: [],
             correctCount: 0,
             wrongCount: 0,
             startedAt: Date.now(),
             lastSavedAt: Date.now(),
-            questionStates: existingStates
+            questionStates: {}
         };
 
         UI.showSection('study');
@@ -208,6 +201,8 @@ const StudyModule = {
 
     // 智能学习：根据当前进度选择合适的题目
     smartStartStudy() {
+        AppState.studySession.active = false;
+        
         const { progress } = AppState;
         const phase1Total = CONFIG.PHASES[1].total;
         const phase2Total = CONFIG.PHASES[2].total;
@@ -289,9 +284,6 @@ const StudyModule = {
         // 初始化已回答题目集合
         this._answeredQuestions = new Set();
 
-        // 保留之前的答题状态
-        const existingStates = AppState.study.questionStates || AppState.studySession.questionStates || {};
-
         const questionOrder = Utils.shuffleArray([...Array(studyQuestions.length).keys()]);
 
         // 初始化学习会话
@@ -300,13 +292,14 @@ const StudyModule = {
             type: 'normal',
             questionIds: studyQuestions.map(q => q.id),
             questionOrder: questionOrder,
+            visitedIndices: [],
             currentIndex: 0,
             answeredIds: [],
             correctCount: 0,
             wrongCount: 0,
             startedAt: Date.now(),
             lastSavedAt: Date.now(),
-            questionStates: existingStates
+            questionStates: {}
         };
 
         UI.showSection('study');
@@ -422,13 +415,14 @@ const StudyModule = {
             type: AppState.studySession.type || 'normal',
             questionIds: shuffledQuestions.map(q => q.id),
             questionOrder: questionOrder,
+            visitedIndices: [],
             currentIndex: 0,
             answeredIds: [],
             correctCount: 0,
             wrongCount: 0,
             startedAt: Date.now(),
             lastSavedAt: Date.now(),
-            questionStates: AppState.study.questionStates || {}
+            questionStates: {}
         };
 
         this.loadQuestion();
@@ -437,7 +431,7 @@ const StudyModule = {
     },
     
     loadQuestion() {
-        const { currentIndex, questions: studyQuestions, questionStates } = AppState.study;
+        const { currentIndex, questions: studyQuestions } = AppState.study;
         const questionOrder = AppState.studySession.questionOrder;
         
         if (studyQuestions.length === 0) {
@@ -455,7 +449,15 @@ const StudyModule = {
         const { questionType, questionCategory, questionNumber, questionContent, optionsList } = UI.elements.study;
         const questionId = typeof question.id === 'number' ? question.id : parseInt(question.id);
         
-        questionNumber.textContent = `第 ${currentIndex + 1}/${studyQuestions.length} 题`;
+        if (!AppState.studySession.visitedIndices) {
+            AppState.studySession.visitedIndices = [];
+        }
+        if (!AppState.studySession.visitedIndices.includes(currentIndex)) {
+            AppState.studySession.visitedIndices.push(currentIndex);
+        }
+        
+        const answeredCount = AppState.studySession.answeredIds ? AppState.studySession.answeredIds.length : 0;
+        questionNumber.textContent = `第 ${answeredCount + 1}/${studyQuestions.length} 题`;
         
         this.updateStudyProgress(currentIndex, studyQuestions.length);
         
@@ -469,13 +471,15 @@ const StudyModule = {
         
         this.renderOptions(optionsList, question);
         
-        const savedState = questionStates[questionId] || AppState.studySession.questionStates[questionId];
+        const answeredIds = AppState.studySession.answeredIds || [];
+        const isAlreadyAnswered = answeredIds.includes(questionId);
+        const savedState = AppState.studySession.questionStates[questionId];
         
-        if (savedState && savedState.isAnswered) {
+        if (isAlreadyAnswered && savedState && savedState.isAnswered) {
             AppState.study.isAnswered = true;
             AppState.study.selectedAnswer = savedState.selectedAnswer;
             
-            this.showAnswerResult(question, savedState.isCorrect);
+            this.showAnswerResult(question, savedState.isCorrect, false);
             
             UI.elements.study.submitBtn.disabled = true;
             UI.elements.study.nextBtn.disabled = false;
@@ -522,14 +526,13 @@ const StudyModule = {
     },
     
     updateStudyProgress(currentIndex, totalQuestions) {
-        if (!UI.elements.study.studyProgressBar || !UI.elements.study.studyProgressText) {
+        if (!UI.elements.study.studyProgressText) {
             return;
         }
         
         const answeredCount = AppState.studySession.answeredIds ? AppState.studySession.answeredIds.length : 0;
         const progress = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
-        UI.elements.study.studyProgressBar.style.width = progress + '%';
-        UI.elements.study.studyProgressText.textContent = `${answeredCount}/${totalQuestions} (${progress}%)`;
+        UI.elements.study.studyProgressText.textContent = `(${progress}%)`;
     },
     
     renderOptions(container, question) {
@@ -538,9 +541,10 @@ const StudyModule = {
             return;
         }
         const questionId = typeof question.id === 'number' ? question.id : parseInt(question.id);
-        let savedState = AppState.study.questionStates[questionId];
+        let savedState = AppState.studySession.questionStates[questionId];
         if (!savedState) {
             savedState = {};
+            AppState.studySession.questionStates[questionId] = savedState;
             AppState.study.questionStates[questionId] = savedState;
         }
 
@@ -588,13 +592,12 @@ const StudyModule = {
         const question = AppState.study.questions[realIndex];
         const questionId = typeof question.id === 'number' ? question.id : parseInt(question.id);
         
-        const currentState = AppState.study.questionStates[questionId] || {};
-        AppState.study.questionStates[questionId] = {
+        const currentState = AppState.studySession.questionStates[questionId] || {};
+        AppState.studySession.questionStates[questionId] = {
             ...currentState,
             selectedAnswer: index,
             isAnswered: false
         };
-        AppState.studySession.questionStates[questionId] = AppState.study.questionStates[questionId];
     },
     
     submitAnswer() {
@@ -612,18 +615,17 @@ const StudyModule = {
         AppState.study.isAnswered = true;
         
         const questionId = typeof question.id === 'number' ? question.id : parseInt(question.id);
-        const qState = AppState.study.questionStates[questionId] || {};
+        const qState = AppState.studySession.questionStates[questionId] || {};
         const shuffledAnswer = qState.shuffledAnswer !== undefined ? qState.shuffledAnswer : question.answer;
         const isCorrect = AppState.study.selectedAnswer === shuffledAnswer;
         
-        const existingState = AppState.study.questionStates[questionId] || {};
-        AppState.study.questionStates[questionId] = {
+        const existingState = AppState.studySession.questionStates[questionId] || {};
+        AppState.studySession.questionStates[questionId] = {
             ...existingState,
             selectedAnswer: AppState.study.selectedAnswer,
             isAnswered: true,
             isCorrect: isCorrect
         };
-        AppState.studySession.questionStates[questionId] = AppState.study.questionStates[questionId];
         
         UI.elements.study.submitBtn.disabled = true;
         UI.elements.study.nextBtn.disabled = false;
@@ -661,8 +663,12 @@ const StudyModule = {
         }, 500);
     },
     
+    _autoAdvanceTimer: null,
+    
     _scheduleAutoAdvance() {
-        setTimeout(() => {
+        this._cancelAutoAdvance();
+        this._autoAdvanceTimer = setTimeout(() => {
+            this._autoAdvanceTimer = null;
             UI.elements.study.answerFeedback.classList.remove('show');
             UI.elements.study.analysis.classList.remove('show');
             UI.elements.study.memoryTip.classList.remove('show');
@@ -678,10 +684,17 @@ const StudyModule = {
         }, 1200);
     },
     
-    showAnswerResult(question, isCorrect) {
+    _cancelAutoAdvance() {
+        if (this._autoAdvanceTimer) {
+            clearTimeout(this._autoAdvanceTimer);
+            this._autoAdvanceTimer = null;
+        }
+    },
+    
+    showAnswerResult(question, isCorrect, showTip = true) {
         const options = UI.elements.study.optionsList.querySelectorAll('.option-item');
         const questionId = typeof question.id === 'number' ? question.id : parseInt(question.id);
-        const qState = AppState.study.questionStates[questionId] || {};
+        const qState = AppState.studySession.questionStates[questionId] || {};
         const correctAnswer = qState.shuffledAnswer !== undefined ? qState.shuffledAnswer : question.answer;
         
         options.forEach((option, index) => {
@@ -706,6 +719,8 @@ const StudyModule = {
             UI.elements.study.memoryTipContent.textContent = question.memoryTip;
             UI.elements.study.memoryTip.classList.add('show');
         }
+        
+        if (!showTip) return;
         
         if (!isCorrect) {
             showToast('😅 回答错误，请查看解析', TOAST_TYPES.WARNING);
@@ -842,6 +857,7 @@ const StudyModule = {
     },
     
     prevQuestion() {
+        this._cancelAutoAdvance();
         if (AppState.study.currentIndex > 0) {
             AppState.study.currentIndex--;
             AppState.resetStudy();
@@ -850,21 +866,41 @@ const StudyModule = {
     },
     
     nextQuestion() {
-        AppState.study.currentIndex++;
-        AppState.studySession.currentIndex = AppState.study.currentIndex;
-
-        const questionOrder = AppState.studySession.questionOrder;
-        if (questionOrder.length > 0 && AppState.study.currentIndex < questionOrder.length) {
-            const seen = questionOrder.slice(0, AppState.study.currentIndex);
-            const remaining = Utils.shuffleArray(
-                questionOrder.slice(AppState.study.currentIndex)
-            );
-            AppState.studySession.questionOrder = [...seen, ...remaining];
+        this._cancelAutoAdvance();
+        
+        const visitedIndices = AppState.studySession.visitedIndices || [];
+        const currentPosInVisited = visitedIndices.indexOf(AppState.study.currentIndex);
+        const isAtLatestVisited = currentPosInVisited === visitedIndices.length - 1 || currentPosInVisited === -1;
+        
+        let nextIndex;
+        
+        if (!isAtLatestVisited && currentPosInVisited >= 0) {
+            nextIndex = visitedIndices[currentPosInVisited + 1];
+        } else {
+            const questionOrder = AppState.studySession.questionOrder || [];
+            const answeredIds = AppState.studySession.answeredIds || [];
+            const totalQuestions = AppState.study.questions.length;
+            
+            nextIndex = AppState.study.currentIndex + 1;
+            
+            if (AppState.studySession.type === 'normal') {
+                while (nextIndex < totalQuestions) {
+                    const realIdx = questionOrder.length > 0 ? questionOrder[nextIndex] : nextIndex;
+                    const question = AppState.study.questions[realIdx];
+                    if (question && !answeredIds.includes(question.id)) {
+                        break;
+                    }
+                    nextIndex++;
+                }
+            }
         }
+        
+        AppState.study.currentIndex = nextIndex;
+        AppState.studySession.currentIndex = nextIndex;
 
         this.saveStudySession();
 
-        if (AppState.study.currentIndex >= AppState.study.questions.length) {
+        if (nextIndex >= AppState.study.questions.length) {
             this.showResult();
         } else {
             AppState.resetStudy();
@@ -921,10 +957,9 @@ const StudyModule = {
 
         // 如果是错题复习模式，处理错题更新
         if (AppState.studySession.type === 'wrong') {
-            // 将答对的错题从错题本中移除
             const answeredCorrectly = [];
             AppState.study.questions.forEach((q) => {
-                if (AppState.study.questionStates[q.id]?.isCorrect) {
+                if (AppState.studySession.questionStates[q.id]?.isCorrect) {
                     answeredCorrectly.push(q.id);
                 }
             });
@@ -1031,6 +1066,7 @@ const StudyModule = {
             type: 'wrong',
             questionIds: AppState.study.questions.map(q => q.id),
             questionOrder: wrongQuestionOrder,
+            visitedIndices: [],
             currentIndex: 0,
             answeredIds: [],
             correctCount: 0,
@@ -1136,6 +1172,7 @@ const StudyModule = {
             type: 'favorite',
             questionIds: AppState.study.questions.map(q => q.id),
             questionOrder: favoriteQuestionOrder,
+            visitedIndices: [],
             currentIndex: 0,
             answeredIds: [],
             correctCount: 0,

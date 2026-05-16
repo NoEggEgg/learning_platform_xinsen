@@ -27,7 +27,6 @@ const UI = {
                 nextBtn: document.getElementById('next-btn'),
                 categoryFilter: document.getElementById('category-filter'),
                 typeFilter: document.getElementById('type-filter'),
-                studyProgressBar: document.getElementById('study-progress-bar'),
                 studyProgressText: document.getElementById('study-progress-text')
             },
             
@@ -215,30 +214,31 @@ function showToast(message, type = 'info') {
     const { color, icon } = config[type] || config.info;
     
     const existingToasts = document.querySelectorAll('.toast-notification');
-    const offset = existingToasts.length * 70;
+    const offset = existingToasts.length * 60;
 
     const toast = document.createElement('div');
     toast.className = 'toast-notification';
     toast.style.cssText = `
         position: fixed;
-        bottom: ${30 + offset}px;
-        right: 30px;
-        padding: 14px 20px;
+        top: ${20 + offset}px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 12px 20px;
         background: white;
         color: var(--text-primary);
         border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06);
         z-index: 1001;
         display: flex;
         align-items: center;
-        gap: 12px;
-        font-size: 0.9rem;
+        gap: 10px;
+        font-size: 0.88rem;
         font-weight: 500;
-        animation: toastSlideIn 0.35s cubic-bezier(0.21, 1.02, 0.73, 1);
+        animation: toastSlideIn 0.3s cubic-bezier(0.21, 1.02, 0.73, 1);
         border-left: 4px solid ${color};
         max-width: 420px;
-        min-width: 280px;
-        transform-origin: bottom right;
+        min-width: 240px;
+        transform-origin: top center;
         transition: all 0.3s ease;
     `;
     
@@ -305,7 +305,7 @@ function showToast(message, type = 'info') {
 function repositionToasts() {
     const toasts = document.querySelectorAll('.toast-notification');
     toasts.forEach((t, i) => {
-        t.style.bottom = `${30 + i * 70}px`;
+        t.style.top = `${20 + i * 60}px`;
     });
 }
 

@@ -56,6 +56,8 @@ const Storage = {
                         ...AppState.studySession,
                         active: true,
                         questionIds: data.studySession.questionIds.filter(id => typeof id === 'number'),
+                        questionOrder: data.studySession.questionOrder || [],
+                        visitedIndices: data.studySession.visitedIndices || [],
                         currentIndex: Math.min(data.studySession.currentIndex || 0, data.studySession.questionIds.length - 1),
                         answeredIds: data.studySession.answeredIds || [],
                         correctCount: data.studySession.correctCount || 0,
@@ -97,6 +99,8 @@ const Storage = {
                 active: false,
                 type: 'normal',
                 questionIds: [],
+                questionOrder: [],
+                visitedIndices: [],
                 currentIndex: 0,
                 answeredIds: [],
                 correctCount: 0,
@@ -199,6 +203,12 @@ const Storage = {
                             type: config.studySession.type === 'wrong' ? 'wrong' : 'normal',
                             questionIds: Array.isArray(config.studySession.questionIds) 
                                 ? config.studySession.questionIds.filter(id => typeof id === 'number') 
+                                : [],
+                            questionOrder: Array.isArray(config.studySession.questionOrder) 
+                                ? config.studySession.questionOrder 
+                                : [],
+                            visitedIndices: Array.isArray(config.studySession.visitedIndices) 
+                                ? config.studySession.visitedIndices 
                                 : [],
                             currentIndex: typeof config.studySession.currentIndex === 'number' 
                                 ? Math.max(0, config.studySession.currentIndex) 

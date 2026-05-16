@@ -450,16 +450,17 @@ const App = {
         // 初始化单题练习会话
         AppState.studySession = {
             active: true,
-            type: 'wrong',  // 标记为错题练习会话
+            type: 'wrong',
             questionIds: [question.id],
             questionOrder: [0],
+            visitedIndices: [],
             currentIndex: 0,
             answeredIds: [],
             correctCount: 0,
             wrongCount: 0,
             startedAt: Date.now(),
             lastSavedAt: Date.now(),
-            questionStates: AppState.study.questionStates || {}
+            questionStates: {}
         };
         
         this.showSection('study');
@@ -918,16 +919,17 @@ const App = {
         // 初始化单题练习会话
         AppState.studySession = {
             active: true,
-            type: 'favorite',  // 标记为收藏练习会话
+            type: 'favorite',
             questionIds: [question.id],
             questionOrder: [0],
+            visitedIndices: [],
             currentIndex: 0,
             answeredIds: [],
             correctCount: 0,
             wrongCount: 0,
             startedAt: Date.now(),
             lastSavedAt: Date.now(),
-            questionStates: AppState.study.questionStates || {}
+            questionStates: {}
         };
         
         this.showSection('study');
@@ -1159,8 +1161,8 @@ const App = {
                 break;
             case 'smartStudy':
             case 'startStudy':
+                AppState.studySession.active = false;
                 this.showSection('study');
-                // 智能学习：根据当前进度选择合适的题目
                 StudyModule.smartStartStudy();
                 break;
             case 'startExam':
