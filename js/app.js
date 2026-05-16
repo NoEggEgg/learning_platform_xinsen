@@ -452,12 +452,14 @@ const App = {
             active: true,
             type: 'wrong',  // 标记为错题练习会话
             questionIds: [question.id],
+            questionOrder: [0],
             currentIndex: 0,
             answeredIds: [],
             correctCount: 0,
             wrongCount: 0,
             startedAt: Date.now(),
-            lastSavedAt: Date.now()
+            lastSavedAt: Date.now(),
+            questionStates: AppState.study.questionStates || {}
         };
         
         this.showSection('study');
@@ -918,12 +920,14 @@ const App = {
             active: true,
             type: 'favorite',  // 标记为收藏练习会话
             questionIds: [question.id],
+            questionOrder: [0],
             currentIndex: 0,
             answeredIds: [],
             correctCount: 0,
             wrongCount: 0,
             startedAt: Date.now(),
-            lastSavedAt: Date.now()
+            lastSavedAt: Date.now(),
+            questionStates: AppState.study.questionStates || {}
         };
         
         this.showSection('study');
@@ -1036,7 +1040,7 @@ const App = {
             } else if (currentPhase === 3) {
                 studyTarget = `冲刺复习（${Math.round(phase3Percent)}%）`;
             } else {
-                studyTarget = '全部题目';
+                studyTarget = `总体进度 ${overallPercent}%`;
             }
             
             recommendations.push({
@@ -1079,8 +1083,10 @@ const App = {
             });
         }
         
-        // 全部完成时
-        if (recommendations.length === 0) {
+        // 全部完成时（仅当所有阶段都100%且今日目标也完成）
+        const isAllPhaseComplete = currentPhase === 0;
+        const isDailyTargetMet = todayDone >= dailyTarget;
+        if (isAllPhaseComplete && isDailyTargetMet && recommendations.length === 0) {
             recommendations.push({
                 priority: 4,
                 icon: 'fa-crown',
@@ -1090,6 +1096,17 @@ const App = {
                 action: 'reviewWrong',
                 actionText: '复习错题',
                 badge: '100%'
+            });
+        } else if (recommendations.length === 0) {
+            recommendations.push({
+                priority: 4,
+                icon: 'fa-rocket',
+                color: '#3b82f6',
+                title: '继续加油',
+                desc: `今日目标已完成！总体进度 ${overallPercent}%，建议继续学习冲刺复习阶段`,
+                action: 'smartStudy',
+                actionText: '继续学习',
+                badge: `${overallPercent}%`
             });
         }
         

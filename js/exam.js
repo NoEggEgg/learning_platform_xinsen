@@ -69,7 +69,20 @@ const ExamModule = {
         
         UI.elements.exam.prevBtn.disabled = currentIndex === 0;
         
-        this.renderOptions(question, answers[currentIndex]);
+        const renderState = AppState.exam.questionRenderState[currentIndex];
+        let displayQ;
+        if (renderState && renderState.shuffledOptions) {
+            displayQ = { ...question, options: renderState.shuffledOptions, answer: renderState.shuffledAnswer };
+        } else {
+            const shuffled = Utils.shuffleOptions(question.options, question.answer);
+            AppState.exam.questionRenderState[currentIndex] = {
+                shuffledOptions: shuffled.shuffledOptions,
+                shuffledAnswer: shuffled.newAnswerIndex
+            };
+            AppState.exam.shuffledAnswers[currentIndex] = shuffled.newAnswerIndex;
+            displayQ = { ...question, options: shuffled.shuffledOptions, answer: shuffled.newAnswerIndex };
+        }
+        this.renderOptions(displayQ, answers[currentIndex]);
         this.updateAnsweredCount();
     },
     
@@ -154,7 +167,10 @@ const ExamModule = {
         const wrongQuestions = [];
         
         AppState.exam.questions.forEach((question, index) => {
-            if (AppState.exam.answers[index] === question.answer) {
+            const shuffledAnswer = AppState.exam.shuffledAnswers[index] !== undefined
+                ? AppState.exam.shuffledAnswers[index]
+                : question.answer;
+            if (AppState.exam.answers[index] === shuffledAnswer) {
                 correct++;
             } else {
                 // 将答错的题目加入错题本（使用Set防止重复）

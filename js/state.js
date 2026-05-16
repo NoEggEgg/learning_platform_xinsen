@@ -15,6 +15,7 @@ const AppState = {
         active: false,
         type: 'normal',       // 会话类型：'normal'=正常学习, 'wrong'=错题复习
         questionIds: [],      // 保存题目ID列表
+        questionOrder: [],    // 题目展示顺序索引（随机排列）
         currentIndex: 0,
         answeredIds: [],      // 已回答的题目ID
         correctCount: 0,
@@ -28,6 +29,8 @@ const AppState = {
         questions: [],
         currentIndex: 0,
         answers: {},
+        shuffledAnswers: {},
+        questionRenderState: {},
         startTime: null,
         timer: null,
         isStarted: false,
@@ -67,6 +70,8 @@ const AppState = {
         this.exam.questions = [];
         this.exam.currentIndex = 0;
         this.exam.answers = {};
+        this.exam.shuffledAnswers = {};
+        this.exam.questionRenderState = {};
         this.exam.startTime = null;
         this.exam.isStarted = false;
         this.exam.wrongQuestions = [];

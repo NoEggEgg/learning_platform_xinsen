@@ -141,6 +141,18 @@ const Utils = {
         return shuffled;
     },
     
+    shuffleOptions(options, answerIndex) {
+        const indices = options.map((_, i) => i);
+        for (let i = indices.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+        return {
+            shuffledOptions: indices.map(i => options[i]),
+            newAnswerIndex: indices.indexOf(answerIndex)
+        };
+    },
+    
     validateQuestion(question, index) {
         const requiredFields = ['id', 'type', 'category', 'content', 'options', 'answer', 'memoryTip', 'analysis'];
         const errors = [];

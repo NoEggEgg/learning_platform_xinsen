@@ -27,7 +27,7 @@ const StudyModule = {
         AppState.studySession.currentIndex = AppState.study.currentIndex;
         AppState.studySession.correctCount = AppState.study.correct;
         AppState.studySession.wrongCount = AppState.study.wrong;
-        // 保存已回答的题目ID数组，避免恢复会话时重复计数
+        AppState.studySession.questionOrder = AppState.studySession.questionOrder || [];
         AppState.studySession.answeredIds = this._answeredQuestions ? Array.from(this._answeredQuestions) : [];
         AppState.studySession.lastSavedAt = Date.now();
         Storage.saveProgress();
@@ -70,11 +70,14 @@ const StudyModule = {
         // 保留之前的答题状态
         const existingStates = AppState.study.questionStates || AppState.studySession.questionStates || {};
 
+        const questionOrder = Utils.shuffleArray([...Array(shuffledQuestions.length).keys()]);
+
         // 初始化学习会话
         AppState.studySession = {
             active: true,
-            type: 'normal',  // 标记为正常学习会话
+            type: 'normal',
             questionIds: AppState.study.questions.map(q => q.id),
+            questionOrder: questionOrder,
             currentIndex: 0,
             answeredIds: [],
             correctCount: 0,
@@ -118,11 +121,14 @@ const StudyModule = {
         // 保留之前的答题状态
         const existingStates = AppState.study.questionStates || AppState.studySession.questionStates || {};
 
+        const questionOrder = Utils.shuffleArray([...Array(shuffledQuestions.length).keys()]);
+
         // 初始化学习会话
         AppState.studySession = {
             active: true,
-            type: 'normal',  // 标记为正常学习会话
+            type: 'normal',
             questionIds: shuffledQuestions.map(q => q.id),
+            questionOrder: questionOrder,
             currentIndex: 0,
             answeredIds: [],
             correctCount: 0,
@@ -175,11 +181,14 @@ const StudyModule = {
         // 保留之前的答题状态
         const existingStates = AppState.study.questionStates || AppState.studySession.questionStates || {};
 
+        const questionOrder = Utils.shuffleArray([...Array(shuffledQuestions.length).keys()]);
+
         // 初始化学习会话
         AppState.studySession = {
             active: true,
-            type: 'normal',  // 标记为正常学习会话
+            type: 'normal',
             questionIds: shuffledQuestions.map(q => q.id),
+            questionOrder: questionOrder,
             currentIndex: 0,
             answeredIds: [],
             correctCount: 0,
@@ -283,11 +292,14 @@ const StudyModule = {
         // 保留之前的答题状态
         const existingStates = AppState.study.questionStates || AppState.studySession.questionStates || {};
 
+        const questionOrder = Utils.shuffleArray([...Array(studyQuestions.length).keys()]);
+
         // 初始化学习会话
         AppState.studySession = {
             active: true,
-            type: 'normal',  // 标记为正常学习会话
+            type: 'normal',
             questionIds: studyQuestions.map(q => q.id),
+            questionOrder: questionOrder,
             currentIndex: 0,
             answeredIds: [],
             correctCount: 0,
@@ -324,9 +336,8 @@ const StudyModule = {
 
     // 恢复学习会话
     resumeStudySession() {
-        const { questionIds, currentIndex, answeredIds, correctCount, wrongCount, questionStates } = AppState.studySession;
+        const { questionIds, currentIndex, answeredIds, correctCount, wrongCount, questionStates, questionOrder } = AppState.studySession;
 
-        // 根据ID重建题目列表（保持原有顺序）
         AppState.study.questions = questionIds
             .map(id => questions.find(q => q.id === id))
             .filter(q => q !== undefined);
@@ -341,6 +352,15 @@ const StudyModule = {
         // 恢复答题状态
         AppState.study.questionStates = questionStates || {};
 
+        // 恢复或生成questionOrder
+        if (questionOrder && questionOrder.length === AppState.study.questions.length) {
+            AppState.studySession.questionOrder = questionOrder;
+        } else {
+            AppState.studySession.questionOrder = Utils.shuffleArray(
+                [...Array(AppState.study.questions.length).keys()]
+            );
+        }
+
         // 初始化已回答题目集合，避免重复计数
         this._answeredQuestions = new Set(answeredIds || []);
 
@@ -349,7 +369,6 @@ const StudyModule = {
         this.studyStartTime = Date.now();
         Storage.saveProgress();
 
-        const remaining = AppState.study.questions.length - AppState.study.currentIndex;
         const totalAnswered = answeredIds ? answeredIds.length : 0;
         showToast(`继续上次学习进度，已完成 ${totalAnswered}/${AppState.study.questions.length} 题`, TOAST_TYPES.INFO);
     },
@@ -397,16 +416,19 @@ const StudyModule = {
         this._answeredQuestions = new Set();
 
         // 更新学习会话，保留原来的会话类型
+        const questionOrder = Utils.shuffleArray([...Array(shuffledQuestions.length).keys()]);
         AppState.studySession = {
             active: true,
             type: AppState.studySession.type || 'normal',
             questionIds: shuffledQuestions.map(q => q.id),
+            questionOrder: questionOrder,
             currentIndex: 0,
             answeredIds: [],
             correctCount: 0,
             wrongCount: 0,
             startedAt: Date.now(),
-            lastSavedAt: Date.now()
+            lastSavedAt: Date.now(),
+            questionStates: AppState.study.questionStates || {}
         };
 
         this.loadQuestion();
@@ -416,6 +438,7 @@ const StudyModule = {
     
     loadQuestion() {
         const { currentIndex, questions: studyQuestions, questionStates } = AppState.study;
+        const questionOrder = AppState.studySession.questionOrder;
         
         if (studyQuestions.length === 0) {
             showToast('暂无题目可用', TOAST_TYPES.WARNING);
@@ -427,13 +450,13 @@ const StudyModule = {
             return;
         }
         
-        const question = studyQuestions[currentIndex];
+        const realIndex = questionOrder.length > 0 ? questionOrder[currentIndex] : currentIndex;
+        const question = studyQuestions[realIndex];
         const { questionType, questionCategory, questionNumber, questionContent, optionsList } = UI.elements.study;
         const questionId = typeof question.id === 'number' ? question.id : parseInt(question.id);
         
         questionNumber.textContent = `第 ${currentIndex + 1}/${studyQuestions.length} 题`;
         
-        // 更新学习进度条
         this.updateStudyProgress(currentIndex, studyQuestions.length);
         
         questionType.textContent = Utils.getTypeName(question.type);
@@ -446,31 +469,24 @@ const StudyModule = {
         
         this.renderOptions(optionsList, question);
         
-        // 检查是否有保存的答题状态
         const savedState = questionStates[questionId] || AppState.studySession.questionStates[questionId];
         
         if (savedState && savedState.isAnswered) {
-            // 恢复答题状态
             AppState.study.isAnswered = true;
             AppState.study.selectedAnswer = savedState.selectedAnswer;
             
-            // 显示之前选择的答案和结果
             this.showAnswerResult(question, savedState.isCorrect);
             
-            // 更新按钮状态
             UI.elements.study.submitBtn.disabled = true;
             UI.elements.study.nextBtn.disabled = false;
         } else {
-            // 默认隐藏答案反馈区域
             UI.elements.study.answerFeedback.classList.remove('show');
             UI.elements.study.memoryTip.classList.remove('show');
             UI.elements.study.analysis.classList.remove('show');
             
-            // 更新按钮状态
             UI.elements.study.submitBtn.disabled = false;
             UI.elements.study.nextBtn.disabled = true;
             
-            // 恢复选择状态（如果有选择但未提交）
             if (savedState && savedState.selectedAnswer !== null) {
                 AppState.study.selectedAnswer = savedState.selectedAnswer;
                 const options = UI.elements.study.optionsList.querySelectorAll('.option-item');
@@ -487,7 +503,6 @@ const StudyModule = {
         
         UI.elements.study.prevBtn.disabled = currentIndex === 0;
         
-        // 更新收藏按钮状态
         this.updateFavoriteButton(question);
     },
     
@@ -522,7 +537,29 @@ const StudyModule = {
             container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">暂无选项</div>';
             return;
         }
-        Utils.renderOptions(container, question, (index) => this.selectOption(index));
+        const questionId = typeof question.id === 'number' ? question.id : parseInt(question.id);
+        let savedState = AppState.study.questionStates[questionId];
+        if (!savedState) {
+            savedState = {};
+            AppState.study.questionStates[questionId] = savedState;
+        }
+
+        let displayOptions = question.options;
+        let correctAnswer = question.answer;
+
+        if (savedState.shuffledOptions && savedState.shuffledAnswer !== undefined) {
+            displayOptions = savedState.shuffledOptions;
+            correctAnswer = savedState.shuffledAnswer;
+        } else {
+            const result = Utils.shuffleOptions(question.options, question.answer);
+            displayOptions = result.shuffledOptions;
+            correctAnswer = result.newAnswerIndex;
+            savedState.shuffledOptions = displayOptions;
+            savedState.shuffledAnswer = correctAnswer;
+        }
+
+        const displayQuestion = { ...question, options: displayOptions, answer: correctAnswer };
+        Utils.renderOptions(container, displayQuestion, (index) => this.selectOption(index));
     },
     
     handleOptionClick(event) {
@@ -546,7 +583,9 @@ const StudyModule = {
         });
         
         // 保存选择状态（即使未提交）
-        const question = AppState.study.questions[AppState.study.currentIndex];
+        const questionOrder = AppState.studySession.questionOrder;
+        const realIndex = questionOrder.length > 0 ? questionOrder[AppState.study.currentIndex] : AppState.study.currentIndex;
+        const question = AppState.study.questions[realIndex];
         const questionId = typeof question.id === 'number' ? question.id : parseInt(question.id);
         
         const currentState = AppState.study.questionStates[questionId] || {};
@@ -567,19 +606,24 @@ const StudyModule = {
         }
         
         AppState.study.isSubmitting = true;
-        const question = AppState.study.questions[AppState.study.currentIndex];
+        const questionOrder = AppState.studySession.questionOrder;
+        const realIndex = questionOrder.length > 0 ? questionOrder[AppState.study.currentIndex] : AppState.study.currentIndex;
+        const question = AppState.study.questions[realIndex];
         AppState.study.isAnswered = true;
         
-        const isCorrect = AppState.study.selectedAnswer === question.answer;
         const questionId = typeof question.id === 'number' ? question.id : parseInt(question.id);
+        const qState = AppState.study.questionStates[questionId] || {};
+        const shuffledAnswer = qState.shuffledAnswer !== undefined ? qState.shuffledAnswer : question.answer;
+        const isCorrect = AppState.study.selectedAnswer === shuffledAnswer;
         
-        const questionState = {
+        const existingState = AppState.study.questionStates[questionId] || {};
+        AppState.study.questionStates[questionId] = {
+            ...existingState,
             selectedAnswer: AppState.study.selectedAnswer,
             isAnswered: true,
             isCorrect: isCorrect
         };
-        AppState.study.questionStates[questionId] = questionState;
-        AppState.studySession.questionStates[questionId] = questionState;
+        AppState.studySession.questionStates[questionId] = AppState.study.questionStates[questionId];
         
         UI.elements.study.submitBtn.disabled = true;
         UI.elements.study.nextBtn.disabled = false;
@@ -606,6 +650,7 @@ const StudyModule = {
             }
             AppState.studySession.correctCount = AppState.study.correct;
             AppState.studySession.wrongCount = AppState.study.wrong;
+            this.updateStudyProgress(AppState.study.currentIndex, AppState.study.questions.length);
             this.saveStudySession();
         } catch (e) {
             console.error('保存学习会话失败:', e);
@@ -635,11 +680,14 @@ const StudyModule = {
     
     showAnswerResult(question, isCorrect) {
         const options = UI.elements.study.optionsList.querySelectorAll('.option-item');
+        const questionId = typeof question.id === 'number' ? question.id : parseInt(question.id);
+        const qState = AppState.study.questionStates[questionId] || {};
+        const correctAnswer = qState.shuffledAnswer !== undefined ? qState.shuffledAnswer : question.answer;
         
         options.forEach((option, index) => {
             option.classList.remove('selected');
             
-            if (index === question.answer) {
+            if (index === correctAnswer) {
                 option.classList.add('correct');
                 option.style.animation = 'pulse 0.5s ease';
             } else if (index === AppState.study.selectedAnswer && !isCorrect) {
@@ -803,8 +851,17 @@ const StudyModule = {
     
     nextQuestion() {
         AppState.study.currentIndex++;
-        // 保存当前进度到会话
         AppState.studySession.currentIndex = AppState.study.currentIndex;
+
+        const questionOrder = AppState.studySession.questionOrder;
+        if (questionOrder.length > 0 && AppState.study.currentIndex < questionOrder.length) {
+            const seen = questionOrder.slice(0, AppState.study.currentIndex);
+            const remaining = Utils.shuffleArray(
+                questionOrder.slice(AppState.study.currentIndex)
+            );
+            AppState.studySession.questionOrder = [...seen, ...remaining];
+        }
+
         this.saveStudySession();
 
         if (AppState.study.currentIndex >= AppState.study.questions.length) {
@@ -812,7 +869,6 @@ const StudyModule = {
         } else {
             AppState.resetStudy();
             this.loadQuestion();
-            // 滚动到题目区域
             const questionCard = document.querySelector('.question-card');
             if (questionCard) {
                 questionCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -824,7 +880,9 @@ const StudyModule = {
         const tip = UI.elements.study.memoryTip;
         const feedback = UI.elements.study.answerFeedback;
         const analysis = UI.elements.study.analysis;
-        const question = AppState.study.questions[AppState.study.currentIndex];
+        const questionOrder = AppState.studySession.questionOrder;
+        const realIndex = questionOrder.length > 0 ? questionOrder[AppState.study.currentIndex] : AppState.study.currentIndex;
+        const question = AppState.study.questions[realIndex];
         
         if (!question) {
             showToast('请先开始学习', TOAST_TYPES.WARNING);
@@ -940,6 +998,7 @@ const StudyModule = {
                 AppState.studySession.previousNormalSession = {
                     type: AppState.studySession.type,
                     questionIds: AppState.studySession.questionIds,
+                    questionOrder: AppState.studySession.questionOrder || [],
                     currentIndex: AppState.studySession.currentIndex,
                     answeredIds: AppState.studySession.answeredIds,
                     correctCount: AppState.studySession.correctCount,
@@ -966,18 +1025,20 @@ const StudyModule = {
         const previousSession = AppState.studySession.previousNormalSession;
 
         // 初始化错题复习会话（重置答题状态）
+        const wrongQuestionOrder = Utils.shuffleArray([...Array(AppState.study.questions.length).keys()]);
         AppState.studySession = {
             active: true,
-            type: 'wrong',  // 标记为错题复习会话
+            type: 'wrong',
             questionIds: AppState.study.questions.map(q => q.id),
+            questionOrder: wrongQuestionOrder,
             currentIndex: 0,
             answeredIds: [],
             correctCount: 0,
             wrongCount: 0,
             startedAt: Date.now(),
             lastSavedAt: Date.now(),
-            previousNormalSession: previousSession,  // 保留之前的会话
-            questionStates: {}                       // 重置答题状态
+            previousNormalSession: previousSession,
+            questionStates: {}
         };
 
         UI.showSection('study');
@@ -989,7 +1050,9 @@ const StudyModule = {
     
     // 收藏当前题目
     toggleFavorite() {
-        const question = AppState.study.questions[AppState.study.currentIndex];
+        const questionOrder = AppState.studySession.questionOrder;
+        const realIndex = questionOrder.length > 0 ? questionOrder[AppState.study.currentIndex] : AppState.study.currentIndex;
+        const question = AppState.study.questions[realIndex];
         if (!question) return;
         
         App.addToFavorite(question.id);
@@ -1040,6 +1103,7 @@ const StudyModule = {
                 AppState.studySession.previousNormalSession = {
                     type: AppState.studySession.type,
                     questionIds: AppState.studySession.questionIds,
+                    questionOrder: AppState.studySession.questionOrder || [],
                     currentIndex: AppState.studySession.currentIndex,
                     answeredIds: AppState.studySession.answeredIds,
                     correctCount: AppState.studySession.correctCount,
@@ -1066,10 +1130,12 @@ const StudyModule = {
         const previousSession = AppState.studySession.previousNormalSession;
 
         // 初始化收藏复习会话（重置答题状态）
+        const favoriteQuestionOrder = Utils.shuffleArray([...Array(AppState.study.questions.length).keys()]);
         AppState.studySession = {
             active: true,
-            type: 'favorite',  // 标记为收藏复习会话
+            type: 'favorite',
             questionIds: AppState.study.questions.map(q => q.id),
+            questionOrder: favoriteQuestionOrder,
             currentIndex: 0,
             answeredIds: [],
             correctCount: 0,
