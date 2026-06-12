@@ -822,6 +822,7 @@ const questions = [
     "difficulty": 2,
     "content": "危化品必须有（）",
     "options": [
+      "MSDS 安全技术说明书",
       "说明书",
       "合格证",
       "检验报告"
